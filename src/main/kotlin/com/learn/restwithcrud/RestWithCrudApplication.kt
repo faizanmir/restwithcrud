@@ -8,5 +8,4 @@ class RestWithCrudApplication
 
 fun main(args: Array<String>) {
     runApplication<RestWithCrudApplication>(*args)
-
 }
