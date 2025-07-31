@@ -2,9 +2,12 @@ package com.learn.restwithcrud.controller
 
 import com.learn.restwithcrud.core.EmployeeService
 import com.learn.restwithcrud.model.Employee
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.toList
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
+import org.springframework.web.server.ResponseStatusException
 
 @RestController
 @RequestMapping("/api/employees")
@@ -13,51 +16,46 @@ class EmployeeController(
 ) {
 
     @PostMapping
-    fun createEmployee(@RequestBody employee: Employee): ResponseEntity<Employee> {
-        val saved = employeeService.create(employee)
-        return ResponseEntity.status(HttpStatus.CREATED).body(saved)
+    @ResponseStatus(HttpStatus.CREATED)
+    suspend fun createEmployee(@RequestBody employee: Employee): Employee {
+        return employeeService.create(employee)
     }
 
     @GetMapping
-    fun getAllEmployees(
-    ): List<Employee> {
+    suspend fun getAllEmployees(): Flow<Employee> {
+        // Return the Flow directly. WebFlux will stream the results.
         return employeeService.all()
     }
 
     @GetMapping("/{id}")
-    fun getById(@PathVariable id: Int): ResponseEntity<Employee> {
-        val employee = employeeService.findById(id)
-        return ResponseEntity.ok(employee)
+    suspend fun getById(@PathVariable id: Int): Employee {
+        return employeeService.findById(id)
     }
 
     @GetMapping("/by-lastname/{lastName}")
-    fun getByLastName(@PathVariable lastName: String): ResponseEntity<List<Employee>> {
-        val employees = employeeService.findByLastName(lastName)
-        return ResponseEntity.ok(employees)
+    suspend fun getByLastName(@PathVariable lastName: String): Flow<Employee> {
+        return employeeService.findByLastName(lastName)
     }
 
     @GetMapping("/by-jobtitle/{jobTitle}")
-    fun getByJobTitle(@PathVariable jobTitle: String): ResponseEntity<List<Employee>> {
-        val employees = employeeService.findByJobTitle(jobTitle)
-        return ResponseEntity.ok(employees)
+    suspend fun getByJobTitle(@PathVariable jobTitle: String): Flow<Employee> {
+        return employeeService.findByJobTitle(jobTitle)
     }
 
-
     @PutMapping("/{id}")
-    fun update(@PathVariable id: Int, @RequestBody updated: Employee): ResponseEntity<Employee> {
-        val updatedEmployee = employeeService.update(id, updated)
-        return ResponseEntity.ok(updatedEmployee)
+    suspend fun update(@PathVariable id: Int, @RequestBody updated: Employee): Employee {
+        return employeeService.update(id, updated)
     }
 
     @DeleteMapping("/{id}")
-    fun delete(@PathVariable id: Int): ResponseEntity<Void> {
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    suspend fun delete(@PathVariable id: Int) {
         employeeService.delete(id)
-        return ResponseEntity.noContent().build()
     }
 
     @PostMapping("/bulk")
-    fun bulkInsert(@RequestBody employees: List<Employee>): ResponseEntity<List<Employee>> {
-        val savedEmployees = employeeService.create(employees)
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedEmployees)
+    @ResponseStatus(HttpStatus.CREATED)
+    suspend fun bulkInsert(@RequestBody employees: List<Employee>): List<Employee> {
+        return employeeService.create(employees).toList()
     }
 }
