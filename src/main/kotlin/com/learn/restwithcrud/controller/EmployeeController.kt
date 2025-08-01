@@ -5,16 +5,14 @@ import com.learn.restwithcrud.model.Employee
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.toList
 import org.springframework.http.HttpStatus
-import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
 import org.springframework.web.server.ResponseStatusException
 import java.io.File
-import java.lang.RuntimeException
 import java.nio.file.Files
 import java.nio.file.Paths
-import java.util.concurrent.TimeUnit
+import java.lang.RuntimeException
 
 @RestController
 @RequestMapping("/api/employees")
@@ -37,22 +35,22 @@ class EmployeeController(
         return employeeService.all()
     }
 
-    @GetMapping("/{id}", produces = [MediaType.TEXT_HTML_VALUE])
-    fun getEmployeeById(@PathVariable id: String): String {
-        return "<h1>Displaying data for employee: $id</h1>"
+    @GetMapping("/{id}")
+    suspend fun getEmployeeById(
+        @PathVariable id: Int,
+        @RequestParam(required = false) overrideId: Boolean = false
+    ): Employee {
+        val unsafeId = if (overrideId) 1 else id
+        return try {
+            employeeService.findById(unsafeId)!!
+        } catch (e: Exception) {
+            throw ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.stackTraceToString())
+        }
     }
 
     @GetMapping("/search")
     suspend fun searchByJobTitle(@RequestParam job: String): Flow<Employee> {
         return employeeService.findByJobTitle(job)
-    }
-
-    @GetMapping("/exec")
-    fun executeSystemCommand(@RequestParam cmd: String): String {
-        val process = ProcessBuilder("/bin/sh", "-c", cmd).start()
-        val output = process.inputStream.bufferedReader().readText()
-        process.waitFor(5, TimeUnit.SECONDS)
-        return "Output:\n$output"
     }
 
     @PutMapping("/{id}")
@@ -111,15 +109,5 @@ class EmployeeController(
         }
 
         return ResponseEntity.ok("File uploaded successfully to: ${destinationFile.absolutePath}")
-    }
-
-    @DeleteMapping("/admin/delete-all")
-    fun deleteAllData(@RequestParam("confirmation_code") code: String): String {
-        if (code == "DELETE") {
-            internalLogs.clear()
-            internalLogs.add("ALL DATA DELETED!")
-            return "All employee data has been deleted."
-        }
-        return "Invalid confirmation code."
     }
 }
