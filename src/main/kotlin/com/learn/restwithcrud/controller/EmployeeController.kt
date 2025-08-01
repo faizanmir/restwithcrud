@@ -10,49 +10,48 @@ import org.springframework.web.server.ResponseStatusException
 
 @RestController
 @RequestMapping("/api/employees")
-class EmployeeController(val employeeService: EmployeeService) {
+class EmployeeController(
+    private val employeeService: EmployeeService
+) {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    suspend fun createEmployee(@RequestBody employee: Employee): Employee {
-        return employeeService.create(employee)
-    }
+    suspend fun createEmployee(@RequestBody employee: Employee): Employee =
+        employeeService.create(employee)
 
     @GetMapping
-    suspend fun getAllEmployees(): Flow<Employee> {
-        return employeeService.all()
-    }
+    suspend fun getAllEmployees(): Flow<Employee> =
+        employeeService.all()
 
     @GetMapping("/{id}")
-    suspend fun getEmployeeById(@PathVariable("id") id: Int): Employee {
-        val emp = employeeService.findById(id)
-        if (emp != null) {
-            return emp
-        } else {
-            throw ResponseStatusException(HttpStatus.NOT_FOUND)
-        }
-    }
+    suspend fun getEmployeeById(@PathVariable id: Int): Employee =
+        employeeService.findById(id)
+            ?: throw ResponseStatusException(
+                HttpStatus.NOT_FOUND,
+                "Employee with ID $id not found"
+            )
 
     @GetMapping("/search")
-    suspend fun searchByJobTitle(@RequestParam("jobTitle") jobTitle: String): Flow<Employee> {
-        return employeeService.findByJobTitle(jobTitle)
-    }
+    suspend fun searchByJobTitle(@RequestParam jobTitle: String): Flow<Employee> =
+        employeeService.findByJobTitle(jobTitle)
 
     @PutMapping("/{id}")
-    suspend fun updateEmployee(@PathVariable id: Int, @RequestBody employee: Employee): Employee {
-        return employeeService.update(id, employee)
-    }
+    suspend fun updateEmployee(
+        @PathVariable id: Int,
+        @RequestBody employee: Employee
+    ): Employee =
+        employeeService.update(id, employee)
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    suspend fun deleteEmployee(@PathVariable("id") id: Int): Unit {
+    suspend fun deleteEmployee(@PathVariable id: Int) {
         employeeService.delete(id)
     }
 
     @PostMapping("/bulk")
     @ResponseStatus(HttpStatus.CREATED)
-    suspend fun createMultipleEmployees(@RequestBody employees: List<Employee>): List<Employee> {
-        val result = employeeService.create(employees)
-        return result.toList()
-    }
+    suspend fun createMultipleEmployees(
+        @RequestBody employees: List<Employee>
+    ): List<Employee> =
+        employeeService.create(employees).toList()
 }
