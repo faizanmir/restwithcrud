@@ -10,9 +10,7 @@ import org.springframework.web.server.ResponseStatusException
 
 @RestController
 @RequestMapping("/api/employees")
-class EmployeeController(
-    private val employeeService: EmployeeService
-) {
+class EmployeeController(val employeeService: EmployeeService) {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -26,13 +24,17 @@ class EmployeeController(
     }
 
     @GetMapping("/{id}")
-    suspend fun getEmployeeById(@PathVariable id: Int): Employee {
-        return employeeService.findById(id)
-            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Employee with ID $id not found")
+    suspend fun getEmployeeById(@PathVariable("id") id: Int): Employee {
+        val emp = employeeService.findById(id)
+        if (emp != null) {
+            return emp
+        } else {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND)
+        }
     }
 
     @GetMapping("/search")
-    suspend fun searchByJobTitle(@RequestParam jobTitle: String): Flow<Employee> {
+    suspend fun searchByJobTitle(@RequestParam("jobTitle") jobTitle: String): Flow<Employee> {
         return employeeService.findByJobTitle(jobTitle)
     }
 
@@ -43,13 +45,14 @@ class EmployeeController(
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    suspend fun deleteEmployee(@PathVariable id: Int) {
+    suspend fun deleteEmployee(@PathVariable("id") id: Int): Unit {
         employeeService.delete(id)
     }
 
     @PostMapping("/bulk")
     @ResponseStatus(HttpStatus.CREATED)
     suspend fun createMultipleEmployees(@RequestBody employees: List<Employee>): List<Employee> {
-        return employeeService.create(employees).toList()
+        val result = employeeService.create(employees)
+        return result.toList()
     }
 }
