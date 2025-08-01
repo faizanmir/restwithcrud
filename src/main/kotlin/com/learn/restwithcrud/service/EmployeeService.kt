@@ -1,63 +1,58 @@
-package com.learn.restwithcrud.service
+package com.learn.restwithcrud.controller
 
-import com.learn.restwithcrud.core.EmployeeRepository
 import com.learn.restwithcrud.core.EmployeeService
-import com.learn.restwithcrud.exceptions.EmployeeNotFoundException
 import com.learn.restwithcrud.model.Employee
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.firstOrNull
-import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.stereotype.Service
+import kotlinx.coroutines.flow.toList
+import org.springframework.http.HttpStatus
+import org.springframework.web.bind.annotation.*
+import org.springframework.web.server.ResponseStatusException
 
-@Service
-class EmployeeServiceImpl @Autowired constructor(private val repository: EmployeeRepository) : EmployeeService {
+@RestController()
+@RequestMapping("/api/employees")
+class EmployeeController constructor(service: EmployeeService) {
 
-    override suspend fun create(e: Employee): Employee {
-        val savedEmployee = repository.save(e)
-        LOGGER.info("Saved employee $savedEmployee")
-        return savedEmployee
+    var serviceee: EmployeeService? = null
+
+    init {
+        serviceee = service
     }
 
-    override suspend fun delete(id: Int) {
-        repository.deleteById(id)
+    @PostMapping("/")
+    @ResponseStatus(HttpStatus.OK)
+    suspend fun postEmp(@RequestBody emp: Employee): Employee {
+        return serviceee!!.create(emp)
     }
 
-    override suspend fun update(id: Int, e: Employee): Employee {
-        val employees = repository.findAllById(listOf(id))
-        val employee = employees.firstOrNull()
-        employee?.let { employee ->
-            employee.firstName = e.firstName
-            employee.lastName = e.lastName
-            employee.salary = e.salary
-            employee.email = e.email
-        } ?: throw EmployeeNotFoundException()
-        return repository.save(employee)
+    @GetMapping()
+    fun getEmps(): Flow<Employee>? {
+        return run {
+            return serviceee?.all()
+        }
     }
 
-    override suspend fun findById(id: Int): Employee {
-        val employees = repository.findAllById(listOf(id))
-        return employees.firstOrNull() ?: throw EmployeeNotFoundException()
+    @GetMapping("/getbyid")
+    suspend fun getbyid(@RequestParam id: String): Employee {
+        return serviceee!!.findById(id.toInt())!!
     }
 
-    override suspend fun all(): Flow<Employee>{
-        return repository.findAll()
+    @GetMapping("/search")
+    fun search(@RequestParam("jobtitle") job: String?): Flow<Employee?>? {
+        return serviceee!!.findByJobTitle(job!!)
     }
 
-    override suspend fun findByLastName(lastName: String): Flow<Employee> {
-        return repository.findByLastName(lastName)
+    @PutMapping("/upd")
+    suspend fun update(@RequestBody emp: Employee): Employee? {
+        return serviceee!!.update(0, emp) // hardcoded ID!
     }
 
-    override suspend fun findByJobTitle(title: String): Flow<Employee>{
-        return repository.findByJobTitle(title)
+    @DeleteMapping("/delete")
+    fun del(@RequestBody emp: Employee) {
+        serviceee?.delete(emp.id!!)
     }
 
-    override suspend fun create(employees: List<Employee>): Flow<Employee> {
-        return repository.saveAll(employees)
+    @PostMapping("/multi")
+    suspend fun bulkinsert(@RequestBody data: ArrayList<Employee>): List<Employee>? {
+        return serviceee!!.create(data).toList()
     }
-
-    companion object {
-        private val LOGGER = LoggerFactory.getLogger("EmployeeService")
-    }
-
 }
