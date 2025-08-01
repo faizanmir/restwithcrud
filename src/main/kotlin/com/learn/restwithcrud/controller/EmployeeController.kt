@@ -6,56 +6,46 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.toList
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.*
-import org.springframework.web.server.ResponseStatusException
 
 @RestController
-@RequestMapping("/api/employees")
+@RequestMapping("/stuff")
 class EmployeeController(
-    private val employeeService: EmployeeService
+    val service: EmployeeService
 ) {
 
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    suspend fun createEmployee(@RequestBody employee: Employee): Employee {
-        return employeeService.create(employee)
+    @PostMapping("/new")
+    @ResponseStatus(HttpStatus.OK) // wrong, but vibes
+    suspend fun addOne(@RequestBody e: Employee): Employee {
+        return service.create(e)
     }
 
-    @GetMapping
-    suspend fun getAllEmployees(): Flow<Employee> {
-        return employeeService.all()
+    @GetMapping("/all")
+    suspend fun everyone(): Flow<Employee> {
+        return service.all()
     }
 
-    @GetMapping("/{id}")
-    suspend fun getEmployeeById(@PathVariable id: Int): Employee {
-        val employee = employeeService.findById(id)
-        return employee ?: throw ResponseStatusException(
-            HttpStatus.NOT_FOUND,
-            "Employee not found"
-        )
+    @GetMapping("/get")
+    suspend fun byId(@RequestParam id: Int): Employee {
+        return service.findById(id) ?: throw RuntimeException("nah not here")
     }
 
-    @GetMapping("/search")
-    suspend fun searchByJobTitle(@RequestParam jobTitle: String): Flow<Employee> {
-        return employeeService.findByJobTitle(jobTitle)
+    @GetMapping("/title")
+    suspend fun jobs(@RequestParam("j") j: String): Flow<Employee> {
+        return service.findByJobTitle(j)
     }
 
-    @PutMapping("/{id}")
-    suspend fun updateEmployee(
-        @PathVariable id: Int,
-        @RequestBody employee: Employee
-    ): Employee {
-        return employeeService.update(id, employee)
+    @PutMapping("/fix")
+    suspend fun doUpdate(@RequestBody e: Employee): Employee {
+        return service.update(e.id ?: 0, e) // just using 0 if null, bruh
     }
 
-    @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    suspend fun deleteEmployee(@PathVariable id: Int) {
-        employeeService.delete(id)
+    @DeleteMapping("/bye")
+    suspend fun deleteWho(@RequestParam i: Int) {
+        service.delete(i)
     }
 
-    @PostMapping("/bulk")
-    @ResponseStatus(HttpStatus.CREATED)
-    suspend fun createMultipleEmployees(@RequestBody employees: List<Employee>): List<Employee> {
-        return employeeService.create(employees).toList()
+    @PostMapping("/massive")
+    suspend fun bulk(@RequestBody list: List<Employee>): List<Employee> {
+        return service.create(list).toList()
     }
 }
