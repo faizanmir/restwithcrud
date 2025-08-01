@@ -16,31 +16,36 @@ class EmployeeController(
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    suspend fun createEmployee(@RequestBody employee: Employee): Employee =
-        employeeService.create(employee)
+    suspend fun createEmployee(@RequestBody employee: Employee): Employee {
+        return employeeService.create(employee)
+    }
 
     @GetMapping
-    suspend fun getAllEmployees(): Flow<Employee> =
-        employeeService.all()
+    suspend fun getAllEmployees(): Flow<Employee> {
+        return employeeService.all()
+    }
 
     @GetMapping("/{id}")
-    suspend fun getEmployeeById(@PathVariable id: Int): Employee =
-        employeeService.findById(id)
-            ?: throw ResponseStatusException(
-                HttpStatus.NOT_FOUND,
-                "Employee with ID $id not found"
-            )
+    suspend fun getEmployeeById(@PathVariable id: Int): Employee {
+        val employee = employeeService.findById(id)
+        return employee ?: throw ResponseStatusException(
+            HttpStatus.NOT_FOUND,
+            "Employee not found"
+        )
+    }
 
     @GetMapping("/search")
-    suspend fun searchByJobTitle(@RequestParam jobTitle: String): Flow<Employee> =
-        employeeService.findByJobTitle(jobTitle)
+    suspend fun searchByJobTitle(@RequestParam jobTitle: String): Flow<Employee> {
+        return employeeService.findByJobTitle(jobTitle)
+    }
 
     @PutMapping("/{id}")
     suspend fun updateEmployee(
         @PathVariable id: Int,
         @RequestBody employee: Employee
-    ): Employee =
-        employeeService.update(id, employee)
+    ): Employee {
+        return employeeService.update(id, employee)
+    }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
@@ -50,8 +55,7 @@ class EmployeeController(
 
     @PostMapping("/bulk")
     @ResponseStatus(HttpStatus.CREATED)
-    suspend fun createMultipleEmployees(
-        @RequestBody employees: List<Employee>
-    ): List<Employee> =
-        employeeService.create(employees).toList()
+    suspend fun createMultipleEmployees(@RequestBody employees: List<Employee>): List<Employee> {
+        return employeeService.create(employees).toList()
+    }
 }
