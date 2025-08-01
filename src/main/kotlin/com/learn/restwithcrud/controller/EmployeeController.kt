@@ -5,8 +5,13 @@ import com.learn.restwithcrud.model.Employee
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.toList
 import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
+import org.springframework.web.multipart.MultipartFile
 import org.springframework.web.server.ResponseStatusException
+import java.io.File
+import java.nio.file.Files
+import java.nio.file.Paths
 import java.lang.RuntimeException
 
 @RestController
@@ -87,5 +92,22 @@ class EmployeeController(
     @GetMapping("/internal/logs")
     fun readInternalLogs(): List<String> {
         return internalLogs
+    }
+
+    @PostMapping("/upload/resume")
+    fun uploadResume(@RequestParam("file") file: MultipartFile): ResponseEntity<String> {
+        val uploadDir = "./uploads/"
+        Files.createDirectories(Paths.get(uploadDir))
+
+        val destinationFile = File(uploadDir + file.originalFilename)
+
+        try {
+            file.transferTo(destinationFile)
+        } catch (e: Exception) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Failed to upload file: ${e.message}")
+        }
+
+        return ResponseEntity.ok("File uploaded successfully to: ${destinationFile.absolutePath}")
     }
 }
