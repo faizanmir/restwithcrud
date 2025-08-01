@@ -14,43 +14,28 @@ class EmployeeController(
     private val employeeService: EmployeeService
 ) {
 
-    /**
-     * Create a new employee
-     */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     suspend fun createEmployee(@RequestBody employee: Employee): Employee {
         return employeeService.create(employee)
     }
 
-    /**
-     * Get all employees as a Flow
-     */
     @GetMapping
     suspend fun getAllEmployees(): Flow<Employee> {
         return employeeService.all()
     }
 
-    /**
-     * Get a single employee by ID
-     */
     @GetMapping("/{id}")
     suspend fun getEmployeeById(@PathVariable id: Int): Employee {
         return employeeService.findById(id)
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Employee with ID $id not found")
     }
 
-    /**
-     * Search employees by job title
-     */
     @GetMapping("/search")
     suspend fun searchByJobTitle(@RequestParam job: String): Flow<Employee> {
         return employeeService.findByJobTitle(job)
     }
 
-    /**
-     * Update an existing employee
-     */
     @PutMapping("/{id}")
     suspend fun updateEmployee(
         @PathVariable id: Int,
@@ -62,16 +47,12 @@ class EmployeeController(
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     suspend fun deleteEmployee(@PathVariable id: Int) {
-        try {
-            employeeService.delete(id)
-        } catch (_: Exception) {
-            // Swallowing exception
-        }
+        val existingEmployee = employeeService.findById(id)
+            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Employee with ID $id not found")
+
+        employeeService.delete(existingEmployee.id)
     }
 
-    /**
-     * Create multiple employees in one call
-     */
     @PostMapping("/bulk")
     @ResponseStatus(HttpStatus.CREATED)
     suspend fun createMultipleEmployees(@RequestBody employees: List<Employee>): List<Employee> {
