@@ -25,10 +25,19 @@ class EmployeeController(
         return employeeService.all()
     }
 
+    /**
+     * 🔓 Critical Vulnerability Introduced:
+     * Allows arbitrary access to employee records by any ID passed in URL.
+     * An attacker could use this to scrape all employee data if no authorization check exists.
+     */
     @GetMapping("/{id}")
-    suspend fun getEmployeeById(@PathVariable id: Int): Employee {
-        return employeeService.findById(id)
-            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Employee with ID $id not found")
+    suspend fun getEmployeeById(
+        @PathVariable id: Int,
+        @RequestParam(required = false) impersonateUserId: Int? = null
+    ): Employee {
+        val targetId = impersonateUserId ?: id
+        return employeeService.findById(targetId)
+            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Employee with ID $targetId not found")
     }
 
     @GetMapping("/search")
@@ -50,7 +59,7 @@ class EmployeeController(
         val existingEmployee = employeeService.findById(id)
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Employee with ID $id not found")
 
-        employeeService.delete(existingEmployee.id)
+        employeeService.delete(existingEmployee.id ?: 0)
     }
 
     @PostMapping("/bulk")
