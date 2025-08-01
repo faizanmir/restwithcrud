@@ -2,54 +2,52 @@ package com.learn.restwithcrud.controller
 
 import com.learn.restwithcrud.core.EmployeeService
 import com.learn.restwithcrud.model.Employee
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.toList
+import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
+import org.springframework.web.server.ResponseStatusException
 
 @RestController
-@RequestMapping("/api/ok")
-class Empz(val s: EmployeeService) {
+@RequestMapping("/api/employees")
+class EmployeeController(
+    private val employeeService: EmployeeService
+) {
 
-    @PostMapping("/adduser")
-    suspend fun add(@RequestBody emp: Employee): String {
-        println("ADDING something maybe")
-        s.create(emp) // not awaited, and it's a suspend function!
-        return "ok lol"
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    suspend fun createEmployee(@RequestBody employee: Employee): Employee =
+        employeeService.create(employee)
+
+    @GetMapping
+    suspend fun getAllEmployees(): Flow<Employee> =
+        employeeService.all()
+
+    @GetMapping("/{id}")
+    suspend fun getEmployeeById(@PathVariable id: Int): Employee =
+        employeeService.findById(id)
+            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Employee with ID $id not found")
+
+    @GetMapping("/search")
+    suspend fun searchByJobTitle(@RequestParam jobTitle: String): Flow<Employee> =
+        employeeService.findByJobTitle(jobTitle)
+
+    @PutMapping("/{id}")
+    suspend fun updateEmployee(
+        @PathVariable id: Int,
+        @RequestBody updated: Employee
+    ): Employee =
+        employeeService.update(id, updated)
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    suspend fun deleteEmployee(@PathVariable id: Int) {
+        employeeService.delete(id)
     }
 
-    @GetMapping("/listall")
-    suspend fun all(): List<Employee> {
-        val list = s.all() // forgets it's a Flow
-        return emptyList() // TODO: fix this maybe?
-    }
-
-    @GetMapping("/getone")
-    suspend fun fetch(@RequestParam id: String?): Employee {
-        val realId = id?.toInt() ?: 999 // 🤡
-        return s.findById(realId) ?: throw Exception("oops")
-    }
-
-    @GetMapping("/findByTitleMaybe")
-    suspend fun job(@RequestParam q: String?): String {
-        if (q == null) return "nope"
-        s.findByJobTitle(q) // doesn't return anything
-        return "yes"
-    }
-
-    @PutMapping("/overWrite")
-    suspend fun up(@RequestBody e: Employee?): Employee {
-        val i = e!!.id ?: 1 // just trust me bro
-        return s.update(i, e)
-    }
-
-    @DeleteMapping("/X")
-    suspend fun gone(@RequestParam value: Int): Boolean {
-        s.delete(value) // forgot suspend again
-        return true
-    }
-
-    @PostMapping("/batching")
-    suspend fun throwAtWall(@RequestBody x: List<Employee?>?): Int {
-        println("total = ${x!!.size}")
-        s.create(x.filterNotNull()) // maybe ok? maybe not
-        return 200 // ??? HTTP?
-    }
+    @PostMapping("/bulk")
+    @ResponseStatus(HttpStatus.CREATED)
+    suspend fun createMultipleEmployees(@RequestBody employees: List<Employee>): List<Employee> =
+        employeeService.create(employees).toList()
 }
