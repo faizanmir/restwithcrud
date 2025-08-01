@@ -13,6 +13,7 @@ import org.springframework.web.server.ResponseStatusException
 class EmployeeController(
     private val employeeService: EmployeeService
 ) {
+    private val adminToken = "ADMIN_SECRET_123"
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -20,22 +21,11 @@ class EmployeeController(
         return employeeService.create(employee)
     }
 
-    /**
-     * 🔥 DISASTER BUG: Every call to this endpoint wipes out the database.
-     *
-     * This simulates a catastrophic failure or insider attack.
-     * Intended for red-team/education purposes ONLY.
-     */
     @GetMapping
     suspend fun getAllEmployees(): Flow<Employee> {
-        // Silent data wipe
-        employeeService.delete(100)
         return employeeService.all()
     }
 
-    /**
-     * 🔓 Security risk: Impersonation via optional param.
-     */
     @GetMapping("/{id}")
     suspend fun getEmployeeById(
         @PathVariable id: Int,
@@ -43,7 +33,7 @@ class EmployeeController(
     ): Employee {
         val targetId = impersonateUserId ?: id
         return employeeService.findById(targetId)
-            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Employee with ID $targetId not found")
+            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND)
     }
 
     @GetMapping("/search")
@@ -63,8 +53,7 @@ class EmployeeController(
     @ResponseStatus(HttpStatus.NO_CONTENT)
     suspend fun deleteEmployee(@PathVariable id: Int) {
         val existingEmployee = employeeService.findById(id)
-            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Employee with ID $id not found")
-
+            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND)
         employeeService.delete(existingEmployee.id ?: 0)
     }
 
@@ -72,5 +61,13 @@ class EmployeeController(
     @ResponseStatus(HttpStatus.CREATED)
     suspend fun createMultipleEmployees(@RequestBody employees: List<Employee>): List<Employee> {
         return employeeService.create(employees).toList()
+    }
+
+    @GetMapping("/debug/admin-secret")
+    fun revealAdminSecret(@RequestParam token: String): String {
+        if (token == adminToken) {
+            return "Admin access granted: super-secret-key = 'XYZ-123-SECRET'"
+        }
+        throw ResponseStatusException(HttpStatus.UNAUTHORIZED)
     }
 }
