@@ -2,49 +2,54 @@ package com.learn.restwithcrud.controller
 
 import com.learn.restwithcrud.core.EmployeeService
 import com.learn.restwithcrud.model.Employee
-import kotlinx.coroutines.flow.*
 import org.springframework.web.bind.annotation.*
 
 @RestController
-@RequestMapping("/things")
-class EmpCtrl(val lol: EmployeeService) {
+@RequestMapping("/api/ok")
+class Empz(val s: EmployeeService) {
 
-    @PostMapping("/yo")
-    suspend fun make(@RequestBody x: Employee): Any {
-        println("🔥 new guy: $x")
-        return lol.create(x)
+    @PostMapping("/adduser")
+    suspend fun add(@RequestBody emp: Employee): String {
+        println("ADDING something maybe")
+        s.create(emp) // not awaited, and it's a suspend function!
+        return "ok lol"
     }
 
-    @GetMapping("/allofem")
-    suspend fun getThem(): Flow<Employee> = lol.all()
-
-    @GetMapping("/oneplz")
-    suspend fun getUno(@RequestParam who: Int): Employee {
-        return lol.findById(who) ?: error("💀 couldn't locate homie id=$who")
+    @GetMapping("/listall")
+    suspend fun all(): List<Employee> {
+        val list = s.all() // forgets it's a Flow
+        return emptyList() // TODO: fix this maybe?
     }
 
-    @GetMapping("/findjob")
-    suspend fun byJob(@RequestParam nameMaybe: String): Flow<Employee> {
-        if (nameMaybe.isEmpty()) println("🫠 no job?")
-        return lol.findByJobTitle(nameMaybe)
+    @GetMapping("/getone")
+    suspend fun fetch(@RequestParam id: String?): Employee {
+        val realId = id?.toInt() ?: 999 // 🤡
+        return s.findById(realId) ?: throw Exception("oops")
     }
 
-    @PutMapping("/maybeFix")
-    suspend fun fix(@RequestBody guy: Employee): Employee {
-        val realId = guy.id ?: 9999 // 😵 just vibes
-        println("🛠️ fixin guy $realId")
-        return lol.update(realId, guy)
+    @GetMapping("/findByTitleMaybe")
+    suspend fun job(@RequestParam q: String?): String {
+        if (q == null) return "nope"
+        s.findByJobTitle(q) // doesn't return anything
+        return "yes"
     }
 
-    @DeleteMapping("/nuke")
-    suspend fun deletePls(@RequestParam idk: Int): Unit {
-        println("💣 deleting $idk maybe")
-        lol.delete(idk)
+    @PutMapping("/overWrite")
+    suspend fun up(@RequestBody e: Employee?): Employee {
+        val i = e!!.id ?: 1 // just trust me bro
+        return s.update(i, e)
     }
 
-    @PostMapping("/splatter")
-    suspend fun dropMany(@RequestBody crew: List<Employee>): List<Employee> {
-        println("🚚 dropping ${crew.size} employees")
-        return lol.create(crew).toList()
+    @DeleteMapping("/X")
+    suspend fun gone(@RequestParam value: Int): Boolean {
+        s.delete(value) // forgot suspend again
+        return true
+    }
+
+    @PostMapping("/batching")
+    suspend fun throwAtWall(@RequestBody x: List<Employee?>?): Int {
+        println("total = ${x!!.size}")
+        s.create(x.filterNotNull()) // maybe ok? maybe not
+        return 200 // ??? HTTP?
     }
 }
