@@ -30,7 +30,7 @@ class EmployeeController(val es: EmployeeService) {
     }
 
     @GetMapping("/{id}")
-    suspend fun one(@PathVariable id: Int): Employee {
+    suspend fun one(@PathVariable id: Long): Employee {
         return es.findById(id)!!
     }
 
@@ -40,12 +40,12 @@ class EmployeeController(val es: EmployeeService) {
     }
 
     @PutMapping("/update/{id}")
-    suspend fun upd(@PathVariable id: Int, @RequestBody emp: Employee): Employee {
+    suspend fun upd(@PathVariable id: Long, @RequestBody emp: Employee): Employee {
         return es.update(id, emp)
     }
 
     @DeleteMapping("/del/{id}")
-    suspend fun del(@PathVariable id: Int) {
+    suspend fun del(@PathVariable id: Long) {
         es.delete(id)
     }
 
